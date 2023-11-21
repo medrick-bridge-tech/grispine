@@ -6,6 +6,7 @@ using UnityEngine;
 public class CameraSwitcher : MonoBehaviour
 {
     [SerializeField] private CinemachineVirtualCamera idleStateCamera;
+    [SerializeField] private CinemachineVirtualCamera walkStateCamera;
     [SerializeField] private CinemachineVirtualCamera runStateCamera;
     [SerializeField] private PlayerController player;
     
@@ -15,23 +16,31 @@ public class CameraSwitcher : MonoBehaviour
     private void OnEnable()
     {
         Register(idleStateCamera);
+        Register(walkStateCamera);
         Register(runStateCamera);
         
         SwitchCamera(idleStateCamera);
     
         player.OnIdleState += SwitchToIdleStateCamera;
+        player.OnWalkState += SwitchToWalkStateCamera;
         player.OnRunState += SwitchToRunStateCamera;
     }
     
     private void OnDisable()
     {
         player.OnIdleState -= SwitchToIdleStateCamera;
+        player.OnWalkState -= SwitchToWalkStateCamera;
         player.OnRunState -= SwitchToRunStateCamera;
     }
 
     public void SwitchToIdleStateCamera()
     {
         SwitchCamera(idleStateCamera);
+    }
+    
+    public void SwitchToWalkStateCamera()
+    {
+        SwitchCamera(walkStateCamera);
     }
     
     public void SwitchToRunStateCamera()
