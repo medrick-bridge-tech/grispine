@@ -5,6 +5,7 @@ using System.Diagnostics;
 using Spine;
 using Spine.Unity;
 using UnityEngine;
+using AnimationState = Spine.AnimationState;
 using Debug = UnityEngine.Debug;
 
 enum Direction
@@ -15,14 +16,16 @@ enum Direction
 
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField] private float moveSpeed;
+    [SerializeField] private float walkSpeed;
+    [SerializeField] private float runSpeed;
     
     private SkeletonAnimation skeletonAnimation;
     private Rigidbody2D rb;
     private float horizontalAxisValue;
-    private bool inputLeft, inputRight, inputJump, inputFire, isGrounded;
+    private bool inputLeft, inputRight, inputRun, inputJump, inputFire, isGrounded;
 
     private const string idleAnimation = "idle";
+    private const string walkAnimation = "walk";
     private const string runAnimation = "run";
     private const string jumpAnimation = "jump";
     private const string fireAnimation = "shoot";
@@ -31,6 +34,7 @@ public class PlayerController : MonoBehaviour
     private const int actionTrack = 1;
 
     public event Action OnIdleState;
+    public event Action OnWalkState;
     public event Action OnRunState;
 
 
@@ -60,13 +64,21 @@ public class PlayerController : MonoBehaviour
         horizontalAxisValue = Input.GetAxis("Horizontal");
         inputLeft = Input.GetKey("left");
         inputRight = Input.GetKey("right");
+        inputRun = Input.GetKey("left shift");
         inputJump = Input.GetKeyDown("space");
-        inputFire = Input.GetKeyDown("left shift");
+        inputFire = Input.GetKeyDown("left ctrl");
     }
 
     private void UpdateHorizontalMovement()
     {
-        rb.velocity = new Vector2(horizontalAxisValue * moveSpeed, rb.velocity.y);
+        if (skeletonAnimation.AnimationName == walkAnimation)
+        {
+            rb.velocity = new Vector2(horizontalAxisValue * walkSpeed, rb.velocity.y);
+        }
+        else if (skeletonAnimation.AnimationName == runAnimation)
+        {
+            rb.velocity = new Vector2(horizontalAxisValue * runSpeed, rb.velocity.y);
+        }
     }
 
     private void UpdateFacing()
@@ -95,10 +107,15 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateAnimationState()
     {
-        if ((inputLeft || inputRight) && isGrounded)
+        if (isGrounded && (inputLeft || inputRight) && inputRun)
         {
             SetRunAnimation();
             OnRunState?.Invoke();
+        }
+        else if (isGrounded && (inputLeft || inputRight))
+        {
+            SetWalkAnimation();
+            OnWalkState?.Invoke();
         }
         else if (isGrounded)
         {
@@ -123,6 +140,14 @@ public class PlayerController : MonoBehaviour
         if (skeletonAnimation.AnimationName != runAnimation)
         {
             skeletonAnimation.AnimationState.SetAnimation(movementTrack, runAnimation, true);
+        }
+    }
+    
+    private void SetWalkAnimation()
+    {
+        if (skeletonAnimation.AnimationName != walkAnimation)
+        {
+            skeletonAnimation.AnimationState.SetAnimation(movementTrack, walkAnimation, true);
         }
     }
     
