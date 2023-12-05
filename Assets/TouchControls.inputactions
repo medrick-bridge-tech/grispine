@@ -1,14 +1,14 @@
 {
-    "name": "TouchControls",
+    "name": "New Controls",
     "maps": [
         {
             "name": "Touch",
-            "id": "94b3ce50-a821-439f-a8aa-4634bbefa523",
+            "id": "ef7f25e2-93b6-42a6-a109-4cb512d2c891",
             "actions": [
                 {
                     "name": "PrimaryContact",
                     "type": "PassThrough",
-                    "id": "456eaf9b-c129-4ee4-9c6b-b033c5547093",
+                    "id": "482e3906-a2e6-4e5c-ac03-7075071d23c8",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "Press",
@@ -17,7 +17,7 @@
                 {
                     "name": "PrimaryPosition",
                     "type": "PassThrough",
-                    "id": "74f5037a-9407-4c65-b172-1d3f278d60b6",
+                    "id": "0bbb14f1-fea6-43e6-8c80-ef2064e0b4a5",
                     "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
@@ -27,7 +27,7 @@
             "bindings": [
                 {
                     "name": "",
-                    "id": "101b6039-2dce-4f89-87f6-f8269325c440",
+                    "id": "39c98982-5115-4202-b612-c23321001f35",
                     "path": "<Touchscreen>/primaryTouch/press",
                     "interactions": "",
                     "processors": "",
@@ -38,7 +38,7 @@
                 },
                 {
                     "name": "",
-                    "id": "4bac2fb8-2dfd-4be1-a4d1-147339152a12",
+                    "id": "2e753743-2bc2-44a6-849d-6560ca3ee925",
                     "path": "<Touchscreen>/primaryTouch/position",
                     "interactions": "",
                     "processors": "",
