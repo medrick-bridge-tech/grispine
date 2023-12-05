@@ -8,7 +8,7 @@ using UnityEngine;
 using AnimationState = Spine.AnimationState;
 using Debug = UnityEngine.Debug;
 
-enum Direction
+public enum Direction
 {
     Left,
     Right
@@ -22,7 +22,7 @@ public class PlayerController : MonoBehaviour
     private SkeletonAnimation skeletonAnimation;
     private Rigidbody2D rb;
     private float horizontalAxisValue;
-    private bool inputLeft, inputRight, inputRun, inputJump, inputFire, isGrounded;
+    private bool inputLeft, inputRight, inputRun, inputJump, inputFire;
 
     private const string idleAnimation = "idle";
     private const string walkAnimation = "walk";
@@ -36,12 +36,21 @@ public class PlayerController : MonoBehaviour
     public event Action OnIdleState;
     public event Action OnWalkState;
     public event Action OnRunState;
+    
+    public float raycastDistance = 0.1f;
+    public LayerMask groundLayer;
+    public bool isGrounded;
+    public bool isJumping;
+    public Animator colliderAnimator;
+    private int jumpCount = 0;
+    private int maxJumpCount = 2;
+    [SerializeField] private KeyboardInput keyboardInput;
 
 
     private void Awake()
     {
-        skeletonAnimation = GetComponent<SkeletonAnimation>();
-        rb = GetComponent<Rigidbody2D>();
+        skeletonAnimation = GetComponentInChildren<SkeletonAnimation>();
+        rb = GetComponentInChildren<Rigidbody2D>();
         isGrounded = true;
     }
 
@@ -53,7 +62,8 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-        UpdateInputValues();
+        CheckGround();
+        //UpdateInputValues();
         UpdateHorizontalMovement();
         UpdateFacing();
         UpdateAnimationState();
@@ -74,10 +84,21 @@ public class PlayerController : MonoBehaviour
         if (skeletonAnimation.AnimationName == walkAnimation)
         {
             rb.velocity = new Vector2(horizontalAxisValue * walkSpeed, rb.velocity.y);
+            transform.position = new Vector2(rb.position.x, rb.position.y);
         }
         else if (skeletonAnimation.AnimationName == runAnimation)
         {
             rb.velocity = new Vector2(horizontalAxisValue * runSpeed, rb.velocity.y);
+            transform.position = new Vector2(rb.position.x, rb.position.y);
+        }
+        else if (skeletonAnimation.AnimationName == jumpAnimation)
+        {
+            rb.velocity = new Vector2(horizontalAxisValue * walkSpeed, 0);
+            transform.position = new Vector2(rb.position.x, 0);
+        }
+        else if (skeletonAnimation.AnimationName == idleAnimation)
+        {
+            rb.velocity = Vector2.zero;
         }
     }
 
@@ -93,7 +114,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void FlipCharacter(Direction direction)
+    public void FlipCharacter(Direction direction)
     {
         if (direction == Direction.Left)
         {
@@ -107,26 +128,28 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateAnimationState()
     {
-        if (isGrounded && (inputLeft || inputRight) && inputRun)
+        if (isGrounded && !isJumping && (keyboardInput.inputLeft || keyboardInput.inputRight) && inputRun)
         {
             SetRunAnimation();
             OnRunState?.Invoke();
         }
-        else if (isGrounded && (inputLeft || inputRight))
+        else if (isGrounded && !isJumping && (keyboardInput.inputLeft || keyboardInput.inputRight))
         {
             SetWalkAnimation();
             OnWalkState?.Invoke();
         }
-        else if (isGrounded)
+        else if (isGrounded && !isJumping && false)
         {
             SetIdleAnimation();
             OnIdleState?.Invoke();
         }
         
-        if (inputJump)
+        if (inputJump && jumpCount < maxJumpCount)
         {
             SetJumpAnimation();
-            isGrounded = false;
+            jumpCount++;
+            isJumping = true;
+            colliderAnimator.SetBool("isPlayerJumping", true);
         }
         
         if (inputFire)
@@ -134,32 +157,49 @@ public class PlayerController : MonoBehaviour
             SetFireAnimation();
         }
     }
-
-    private void SetRunAnimation()
+    
+    private void CheckGround()
     {
-        if (skeletonAnimation.AnimationName != runAnimation)
+        RaycastHit2D hit = Physics2D.Raycast(rb.transform.position, Vector2.down, raycastDistance, groundLayer);
+        Debug.DrawRay(rb.transform.position, Vector2.down * raycastDistance, Color.red);
+
+        if (hit.collider != null)
+        {
+            Debug.Log("Player is grounded");
+            isGrounded = true;
+        }
+        else
+        {
+            Debug.Log("Player is not grounded");
+            isGrounded = false;
+        }
+    }
+
+    public void SetRunAnimation()
+    {
+        if (skeletonAnimation.AnimationName != runAnimation && !isJumping)
         {
             skeletonAnimation.AnimationState.SetAnimation(movementTrack, runAnimation, true);
         }
     }
     
-    private void SetWalkAnimation()
+    public void SetWalkAnimation()
     {
-        if (skeletonAnimation.AnimationName != walkAnimation)
+        if (skeletonAnimation.AnimationName != walkAnimation && !isJumping)
         {
             skeletonAnimation.AnimationState.SetAnimation(movementTrack, walkAnimation, true);
         }
     }
     
-    private void SetIdleAnimation()
+    public void SetIdleAnimation()
     {
-        if (skeletonAnimation.AnimationName != idleAnimation)
+        if (skeletonAnimation.AnimationName != idleAnimation && !isJumping)
         {
             skeletonAnimation.AnimationState.SetAnimation(movementTrack, idleAnimation, true);
         }
     }
     
-    private void SetJumpAnimation()
+    public void SetJumpAnimation()
     {
         if (skeletonAnimation.AnimationName != jumpAnimation)
         {
@@ -167,7 +207,7 @@ public class PlayerController : MonoBehaviour
         }
     }
     
-    private void SetFireAnimation()
+    public void SetFireAnimation()
     {
         if (skeletonAnimation.AnimationName != fireAnimation)
         {
@@ -179,8 +219,9 @@ public class PlayerController : MonoBehaviour
     {
         if (trackEntry.Animation.Name == jumpAnimation)
         {
+            isJumping = false;
+            colliderAnimator.SetBool("isPlayerJumping", false);
             SetIdleAnimation();
-            isGrounded = true;
         }
     }
     
