@@ -5,48 +5,14 @@ using UnityEngine;
 
 public class CameraSwitcher : MonoBehaviour
 {
-    [SerializeField] private CinemachineVirtualCamera idleStateCamera;
-    [SerializeField] private CinemachineVirtualCamera walkStateCamera;
-    [SerializeField] private CinemachineVirtualCamera runStateCamera;
-    [SerializeField] private PlayerController player;
-    
     private List<CinemachineVirtualCamera> cameras = new List<CinemachineVirtualCamera>();
 
-
-    private void OnEnable()
+    public List<CinemachineVirtualCamera> Cameras
     {
-        Register(idleStateCamera);
-        Register(walkStateCamera);
-        Register(runStateCamera);
-        
-        SwitchCamera(idleStateCamera);
-    
-        player.OnIdleState += SwitchToIdleStateCamera;
-        player.OnWalkState += SwitchToWalkStateCamera;
-        player.OnRunState += SwitchToRunStateCamera;
+        get => cameras;
+        set => cameras = value;
     }
     
-    private void OnDisable()
-    {
-        player.OnIdleState -= SwitchToIdleStateCamera;
-        player.OnWalkState -= SwitchToWalkStateCamera;
-        player.OnRunState -= SwitchToRunStateCamera;
-    }
-
-    public void SwitchToIdleStateCamera()
-    {
-        SwitchCamera(idleStateCamera);
-    }
-    
-    public void SwitchToWalkStateCamera()
-    {
-        SwitchCamera(walkStateCamera);
-    }
-    
-    public void SwitchToRunStateCamera()
-    {
-        SwitchCamera(runStateCamera);
-    }
     
     public void SwitchCamera(CinemachineVirtualCamera camera)
     {
@@ -59,10 +25,5 @@ public class CameraSwitcher : MonoBehaviour
                 cam.Priority = 0;
             }
         }
-    }
-
-    public void Register(CinemachineVirtualCamera camera)
-    {
-        cameras.Add(camera);
     }
 }
