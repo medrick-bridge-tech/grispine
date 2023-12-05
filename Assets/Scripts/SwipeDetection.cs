@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class SwipeDetection : MonoBehaviour
 {
+    [SerializeField] private PlayerController player;
     [SerializeField] private InputManager inputManager;
     [SerializeField] private float minSwipeDistance = 0.2f;
     [SerializeField] private float maxSwipeTime = 1f;
@@ -56,10 +57,13 @@ public class SwipeDetection : MonoBehaviour
         if (Vector2.Dot(Vector2.up, direction) > directionThreshold)
         {
             Debug.Log("Swipe Up");
+            player.isJumping = true;
+            player.SetJumpAnimation();
         }
         else if (Vector2.Dot(Vector2.down, direction) > directionThreshold)
         {
             Debug.Log("Swipe Down");
+            player.SetFireAnimation();
         }
     }
 }
