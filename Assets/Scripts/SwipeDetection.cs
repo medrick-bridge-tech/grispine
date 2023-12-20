@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Spine.Unity;
 using UnityEngine;
 
 public class SwipeDetection : MonoBehaviour
@@ -14,6 +15,9 @@ public class SwipeDetection : MonoBehaviour
     private Vector2 endPosition;
     private float startTime;
     private float endTime;
+    
+    public bool swipeUp;
+    public bool swipeDown;
     
 
     private void OnEnable()
@@ -56,14 +60,20 @@ public class SwipeDetection : MonoBehaviour
     {
         if (Vector2.Dot(Vector2.up, direction) > directionThreshold)
         {
-            Debug.Log("Swipe Up");
-            player.isJumping = true;
-            player.SetJumpAnimation();
+            swipeUp = true;
+            StartCoroutine(WaitAndEndSwipe());
         }
         else if (Vector2.Dot(Vector2.down, direction) > directionThreshold)
         {
-            Debug.Log("Swipe Down");
-            player.SetFireAnimation();
+            swipeDown = true;
+            StartCoroutine(WaitAndEndSwipe());
         }
+    }
+
+    private IEnumerator WaitAndEndSwipe()
+    {
+        yield return new WaitForEndOfFrame();
+        swipeUp = false;
+        swipeDown = false;
     }
 }

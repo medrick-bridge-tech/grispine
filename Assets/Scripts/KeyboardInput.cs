@@ -4,8 +4,10 @@ using UnityEngine;
 
 public class KeyboardInput : MonoBehaviour
 {
+    [SerializeField] private PlayerController player;
+    
     public bool inputLeft, inputRight, inputRun, inputJump, inputFire;
-    //private float horizontalAxisValue;
+    public float horizontalAxisValue;
     
     
     void Update()
@@ -15,7 +17,7 @@ public class KeyboardInput : MonoBehaviour
     
     private void UpdateInputValues()
     {
-        //horizontalAxisValue = Input.GetAxis("Horizontal");
+        horizontalAxisValue = Input.GetAxis("Horizontal");
         inputLeft = Input.GetKey("left");
         inputRight = Input.GetKey("right");
         inputRun = Input.GetKey("left shift");

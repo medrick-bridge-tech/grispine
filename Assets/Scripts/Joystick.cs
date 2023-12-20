@@ -6,42 +6,50 @@ using UnityEngine.InputSystem;
 
 public class Joystick : MonoBehaviour
 {
-    [SerializeField] private PlayerController player;
-
     private Vector2 touchStartPosition;
     private Vector2 touchCurrentPosition;
     private Vector2 mouseWorldPosition;
+    private Vector2 mouseScreenPosition;
     private float cameraXPosition;
     private float mouseXPosition;
     private float mouseYPosition;
     private bool touchStart;
+
+    public bool walkRight;
+    public bool runRight;
+    public bool walkLeft;
+    public bool runLeft;
+    public bool isPlayerIdle;
+
+    private float transitionDuration = 1f; 
+    private float elapsedTime = 0f;
+    public float horizontalForce = 0f;
     
-    
+
+
     void Update()
     {
         cameraXPosition = Camera.main.transform.position.x;
         mouseXPosition = Input.mousePosition.x;
         mouseYPosition = Input.mousePosition.y;
-        
+        mouseScreenPosition = new Vector2(mouseXPosition, mouseYPosition);
+
         mouseWorldPosition = Camera.main.ScreenToWorldPoint(new Vector2(mouseXPosition, mouseYPosition));
+        
     
         if (Input.GetMouseButtonDown(0) && mouseWorldPosition.x < cameraXPosition)
         {
-            touchStartPosition = mouseWorldPosition;
-            Debug.Log("start");
+            touchStartPosition = mouseScreenPosition;
         }
     
         if (Input.GetMouseButton(0) && mouseWorldPosition.x < cameraXPosition)
         {
             touchStart = true;
-            touchCurrentPosition = mouseWorldPosition;
-            Debug.Log("continue");
+            touchCurrentPosition = mouseScreenPosition;
         }
         else if (Input.GetMouseButtonUp(0))
         {
             touchStart = false;
-            Debug.Log("end");
-            //player.SetIdleAnimation();
         }
         
         if (touchStart)
@@ -53,7 +61,13 @@ public class Joystick : MonoBehaviour
         }
         else
         {
-            player.SetIdleAnimation();
+            isPlayerIdle = true;
+            walkLeft = false;
+            walkRight = false;
+            runLeft = false;
+            runRight = false;
+            horizontalForce = 0;
+            elapsedTime = 0f;
         }
     }
 
@@ -61,25 +75,53 @@ public class Joystick : MonoBehaviour
     {
         Vector2 directionVector = touchCurrentPosition - touchStartPosition;
         
-        if (Vector2.Dot(Vector2.right, direction) > 0.8f && mouseWorldPosition.x < cameraXPosition && directionVector.magnitude <= 1)
+        if (Vector2.Dot(Vector2.right, direction) > 0.8f && mouseWorldPosition.x < cameraXPosition && directionVector.magnitude <= 50)
         {
-            player.SetWalkAnimation();
-            player.FlipCharacter(Direction.Right);
+            walkRight = true;
+            isPlayerIdle = false;
+            walkLeft = false;
+            runLeft = false;
+            runRight = false;
+            MoveSmoothly();
         }
-        else if (Vector2.Dot(Vector2.right, direction) > 0.8f && mouseWorldPosition.x < cameraXPosition && directionVector.magnitude > 1)
+        else if (Vector2.Dot(Vector2.right, direction) > 0.8f && mouseWorldPosition.x < cameraXPosition && directionVector.magnitude > 50)
         {
-            player.SetRunAnimation();
-            player.FlipCharacter(Direction.Right);
+            runRight = true;
+            isPlayerIdle = false;
+            walkLeft = false;
+            walkRight = false;
+            runLeft = false;
+            MoveSmoothly();
         }
-        else if (Vector2.Dot(Vector2.left, direction) > 0.8f && mouseWorldPosition.x < cameraXPosition && directionVector.magnitude <= 1)
+        else if (Vector2.Dot(Vector2.left, direction) > 0.8f && mouseWorldPosition.x < cameraXPosition && directionVector.magnitude <= 50)
         {
-            player.SetWalkAnimation();
-            player.FlipCharacter(Direction.Left);
+            walkLeft = true;
+            isPlayerIdle = false;
+            walkRight = false;
+            runLeft = false;
+            runRight = false;
+            MoveSmoothly();
         }
-        else if (Vector2.Dot(Vector2.left, direction) > 0.8f && mouseWorldPosition.x < cameraXPosition && directionVector.magnitude > 1)
+        else if (Vector2.Dot(Vector2.left, direction) > 0.8f && mouseWorldPosition.x < cameraXPosition && directionVector.magnitude > 50)
         {
-            player.SetRunAnimation();
-            player.FlipCharacter(Direction.Left);
+            
+            runLeft = true;
+            isPlayerIdle = false;
+            walkLeft = false;
+            walkRight = false;
+            runRight = false;
+            MoveSmoothly();
         }
+    }
+
+    private void MoveSmoothly()
+    {
+        elapsedTime += Time.deltaTime;
+        
+        if (elapsedTime > transitionDuration)
+            elapsedTime = transitionDuration;
+        
+        float t = elapsedTime / transitionDuration;
+        horizontalForce = Mathf.SmoothStep(0f, 1f, t);
     }
 }

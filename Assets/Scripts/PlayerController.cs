@@ -45,6 +45,8 @@ public class PlayerController : MonoBehaviour
     private int jumpCount = 0;
     private int maxJumpCount = 2;
     [SerializeField] private KeyboardInput keyboardInput;
+    [SerializeField] private Joystick joystick;
+    [SerializeField] private SwipeDetection swipeDetection;
 
 
     private void Awake()
@@ -63,99 +65,9 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         CheckGround();
-        //UpdateInputValues();
+        UpdateAnimationState();
         UpdateHorizontalMovement();
         UpdateFacing();
-        UpdateAnimationState();
-    }
-    
-    private void UpdateInputValues()
-    {
-        horizontalAxisValue = Input.GetAxis("Horizontal");
-        inputLeft = Input.GetKey("left");
-        inputRight = Input.GetKey("right");
-        inputRun = Input.GetKey("left shift");
-        inputJump = Input.GetKeyDown("space");
-        inputFire = Input.GetKeyDown("left ctrl");
-    }
-
-    private void UpdateHorizontalMovement()
-    {
-        if (skeletonAnimation.AnimationName == walkAnimation)
-        {
-            rb.velocity = new Vector2(horizontalAxisValue * walkSpeed, rb.velocity.y);
-            transform.position = new Vector2(rb.position.x, rb.position.y);
-        }
-        else if (skeletonAnimation.AnimationName == runAnimation)
-        {
-            rb.velocity = new Vector2(horizontalAxisValue * runSpeed, rb.velocity.y);
-            transform.position = new Vector2(rb.position.x, rb.position.y);
-        }
-        else if (skeletonAnimation.AnimationName == jumpAnimation)
-        {
-            rb.velocity = new Vector2(horizontalAxisValue * walkSpeed, 0);
-            transform.position = new Vector2(rb.position.x, 0);
-        }
-        else if (skeletonAnimation.AnimationName == idleAnimation)
-        {
-            rb.velocity = Vector2.zero;
-        }
-    }
-
-    private void UpdateFacing()
-    {
-        if (inputLeft)
-        {
-            FlipCharacter(Direction.Left);
-        }
-        else if (inputRight)
-        {
-            FlipCharacter(Direction.Right);
-        }
-    }
-
-    public void FlipCharacter(Direction direction)
-    {
-        if (direction == Direction.Left)
-        {
-            transform.localScale = new Vector3(-1, 1, 1);
-        }
-        else if (direction == Direction.Right)
-        {
-            transform.localScale = Vector3.one;
-        }
-    }
-
-    private void UpdateAnimationState()
-    {
-        if (isGrounded && !isJumping && (keyboardInput.inputLeft || keyboardInput.inputRight) && inputRun)
-        {
-            SetRunAnimation();
-            OnRunState?.Invoke();
-        }
-        else if (isGrounded && !isJumping && (keyboardInput.inputLeft || keyboardInput.inputRight))
-        {
-            SetWalkAnimation();
-            OnWalkState?.Invoke();
-        }
-        else if (isGrounded && !isJumping && false)
-        {
-            SetIdleAnimation();
-            OnIdleState?.Invoke();
-        }
-        
-        if (inputJump && jumpCount < maxJumpCount)
-        {
-            SetJumpAnimation();
-            jumpCount++;
-            isJumping = true;
-            colliderAnimator.SetBool("isPlayerJumping", true);
-        }
-        
-        if (inputFire)
-        {
-            SetFireAnimation();
-        }
     }
     
     private void CheckGround()
@@ -165,16 +77,45 @@ public class PlayerController : MonoBehaviour
 
         if (hit.collider != null)
         {
-            Debug.Log("Player is grounded");
             isGrounded = true;
         }
         else
         {
-            Debug.Log("Player is not grounded");
             isGrounded = false;
         }
     }
-
+    
+    private void UpdateAnimationState()
+    {
+        if (isGrounded && !isJumping && (((keyboardInput.inputLeft || keyboardInput.inputRight) && keyboardInput.inputRun) || joystick.runRight || joystick.runLeft))
+        {
+            SetRunAnimation();
+            OnRunState?.Invoke();
+        }
+        else if (isGrounded && !isJumping && (keyboardInput.inputLeft || keyboardInput.inputRight || joystick.walkRight || joystick.walkLeft))
+        {
+            SetWalkAnimation();
+            OnWalkState?.Invoke();
+        }
+        else if (isGrounded && !isJumping)
+        {
+            SetIdleAnimation();
+            OnIdleState?.Invoke();
+        }
+        
+        if (keyboardInput.inputJump || swipeDetection.swipeUp)
+        {
+            SetJumpAnimation();
+            isJumping = true;
+            colliderAnimator.SetBool("isPlayerJumping", true);
+        }
+        
+        if (keyboardInput.inputFire || swipeDetection.swipeDown)
+        {
+            SetFireAnimation();
+        }
+    }
+    
     public void SetRunAnimation()
     {
         if (skeletonAnimation.AnimationName != runAnimation && !isJumping)
@@ -215,6 +156,79 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void UpdateHorizontalMovement()
+    {
+        if (skeletonAnimation.AnimationName == walkAnimation)
+        {
+            if (keyboardInput.inputLeft || keyboardInput.inputRight)
+            {
+                rb.velocity = new Vector2(keyboardInput.horizontalAxisValue * walkSpeed, rb.velocity.y);
+                transform.position = new Vector2(rb.position.x, rb.position.y);
+            }
+            else if (joystick.walkRight)
+            {
+                rb.velocity = new Vector2(joystick.horizontalForce * walkSpeed, rb.velocity.y);
+                transform.position = new Vector2(rb.position.x, rb.position.y);
+            }
+            else if (joystick.walkLeft)
+            {
+                rb.velocity = new Vector2(-joystick.horizontalForce * walkSpeed, rb.velocity.y);
+                transform.position = new Vector2(rb.position.x, rb.position.y);
+            }
+        }
+        else if (skeletonAnimation.AnimationName == runAnimation)
+        {
+            if (keyboardInput.inputLeft || keyboardInput.inputRight)
+            {
+                rb.velocity = new Vector2(keyboardInput.horizontalAxisValue * runSpeed, rb.velocity.y);
+                transform.position = new Vector2(rb.position.x, rb.position.y);
+            }
+            else if (joystick.runRight)
+            {
+                rb.velocity = new Vector2(joystick.horizontalForce * runSpeed, rb.velocity.y);
+                transform.position = new Vector2(rb.position.x, rb.position.y);
+            }
+            else if (joystick.runLeft)
+            {
+                rb.velocity = new Vector2(-joystick.horizontalForce * runSpeed, rb.velocity.y);
+                transform.position = new Vector2(rb.position.x, rb.position.y);
+            }
+        }
+        else if (skeletonAnimation.AnimationName == jumpAnimation)
+        {
+            rb.velocity = new Vector2(keyboardInput.horizontalAxisValue * walkSpeed, 0);
+            transform.position = new Vector2(rb.position.x, 0);
+        }
+        else if (skeletonAnimation.AnimationName == idleAnimation)
+        {
+            rb.velocity = Vector2.zero;
+        }
+    }
+
+    private void UpdateFacing()
+    {
+        if (keyboardInput.inputLeft || joystick.walkLeft || joystick.runLeft)
+        {
+            FlipCharacter(Direction.Left);
+        }
+        else if (keyboardInput.inputRight || joystick.walkRight || joystick.runRight)
+        {
+            FlipCharacter(Direction.Right);
+        }
+    }
+
+    public void FlipCharacter(Direction direction)
+    {
+        if (direction == Direction.Left)
+        {
+            transform.localScale = new Vector3(-1, 1, 1);
+        }
+        else if (direction == Direction.Right)
+        {
+            transform.localScale = Vector3.one;
+        }
+    }
+    
     private void OnAnimationComplete(TrackEntry trackEntry)
     {
         if (trackEntry.Animation.Name == jumpAnimation)
